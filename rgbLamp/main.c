@@ -26,48 +26,73 @@
 									PIN_down((port), (pin)); \
                          } while (0)
 
-uint8_t GSmatrix[24];
+uint8_t GSmatrix[6][4];
 
 
 
 
-void SpiGS(void){
+void SendGsDataToTLC(void){
 	PIN_down(XLAT_PORT, XLAT_PIN); //latch
 		PIN_down(VPRG_PORT, VPRG_PIN); //select GS registry
 		PIN_down(BLANK_PORT, BLANK_PIN);
 
 	SPCR |= (1<<SPE)|(1<<MSTR);
 
-	for (int i = 0; i < 24; i++) {
-		SPDR = GSmatrix[i];
+	for(int sect = 0; sect<4;sect++){
+	for (int i = 0; i < 6; i++) {
+		SPDR = GSmatrix[i][sect];
 		while(!(SPSR &(1<<SPIF)));
+	}
 	}
 	PIN_Latch(XLAT_PORT, XLAT_PIN);
 		_delay_ms(10);
 
 
 }
+//
+// row - one from 0-15 rows
+// value - GS value 0-4095
 
-
-void setLine(int rgbcolour, int row, int value){
+void setLine(int section, int row, int value){
 
 	uint8_t high;
 	uint8_t low;
 
-	if(row==0){
-	GSmatrix[row]=(value>>4);
-	low=GSmatrix[row+1]&0x0F;
-	high=value<<4;
-	GSmatrix[row+1]=low|high;
+	switch (row) {
+	case 0:
+		GSmatrix[row][section] = (value >> 4);
+		low = GSmatrix[row + 1][section] & 0x0F;
+		high = value << 4;
+		GSmatrix[row + 1][section] = low | high;
+		break;
+	case 1:
+		high = GSmatrix[row][section] & 0xF0;
+		low = value >> 8;
+		GSmatrix[row][section] = low | high;
+		GSmatrix[row + 1][section] = value;
+		break;
 
+	case 2:
+		GSmatrix[row + 1][section] = value >> 4;
+		low = GSmatrix[row + 2][section] & 0x0F;
+		high = value << 4;
+		GSmatrix[row + 2][section] = low | high;
+		break;
+	case 3:
+		high = GSmatrix[row + 1][section] & 0xF0;
+		low = value >> 8;
+		GSmatrix[row + 1][section] = low | high;
+		GSmatrix[row + 2][section] = value;
+		break;
 	}
 
 
-//	     0  |   1    |   2         |     3       |   4  |
-//	111111111111  1111111111111 111111111111 111111111111
-//	   0               1            2             3
-//		4				5				6			7
-//	   01              12           23            34
+
+//	     0  |   1    |   2    |     3 |   4    |  5      bytes
+//	111111111111  111111111111 111111111111 111111111111 values
+
+//		0               1            2            3   rows
+
 
 }
 
@@ -92,14 +117,20 @@ void TLC5940_Init(void) {
 
 int main(void) {
 	TLC5940_Init();
+	setLine(0, 0,4095);
+	setLine(1, 1,4095);
+	setLine(2, 2,4095);
+	setLine(3, 3,4095);
 
-	setLine(0,0,3000);
-	SpiGS();
+
+
+	SendGsDataToTLC();
 	while (1) {
 		int GSCLK = 0;
 		for (GSCLK = 0; GSCLK < 4096; ++GSCLK) {
 			PIN_Latch(GSCLK_PORT, GSCLK_PIN);
 		}
+
 		PIN_Latch(BLANK_PORT, BLANK_PIN);
 
 	}
