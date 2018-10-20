@@ -5,30 +5,35 @@
 
 int main(void) {
 	TLC5940_Init();
-	int sect=0,row=0;
-	int vector = 1;
-	int R=1;
+	loadDcTable();
+
+	SendDcDataToTLC();
+	int maxLight=10;
+	int RGBTable[6]={0,0,0,0,0,0};
+	int *pointer;
+	pointer=RGBTable;
+
+	setAllRGB(3000,0,0);
 	while (1) {
 
-		setLineRGB(sect,row,200,200,0);
+
+
+
+
+		pointer=randomChange(pointer,maxLight);
+
+		setLineRGB(0,0,RGBTable[0],RGBTable[1],RGBTable[2]);
+
 		SendGsDataToTLC();
-		//setLineRGB(sect,row,0,0,0);
-		R=R+30;
-
-		if(R==4000)R=0;
-		if(row<3){
-		row=row+vector;
-		}
-		else{
-			if (sect<3){sect++;}
-			else{sect=0;}
-
-		row=0;
-		}
-		setLightingPeriod(1);
+			shiftUp();
 
 
-		}
+
+		setLightingPeriod(5);
+
+
+
+	}
 	return 0;
 }
 

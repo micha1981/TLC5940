@@ -26,7 +26,14 @@
 
 
 void SendGsDataToTLC(void);
+void SendDcDataToTLC(void);
 void setLine(char colour, int section, int row, int value);
 void TLC5940_Init(void);
 void setLightingPeriod(int counter);
 void setLineRGB(int section, int row, int R, int G, int B);
+void loadDcTable(void);
+void setDCLine(char colour, int section, int row, int value);
+void setAllRGB(int R, int G, int B);
+int * randomChange(int *RgbRandomTable, int maxLight);
+int * getLineRGBvalues(int section, int row);
+void shiftUp(void);
